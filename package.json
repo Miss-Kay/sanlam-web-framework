@@ -1,11 +1,12 @@
 {
   "name": "sanlam-web-framework",
   "version": "1.0.0",
-  "description": "Sanlam Online link integrity + header reachability framework — Playwright + TypeScript, self-healing locators, CI/CD to AWS",
+  "description": "Sanlam Online link integrity + header reachability framework \u2014 Playwright + TypeScript, self-healing locators, CI/CD to AWS",
   "scripts": {
     "test": "playwright test",
     "test:links": "playwright test tests/link-integrity.spec.ts",
     "test:nav": "playwright test tests/nav-reachability.spec.ts",
+    "test:mobile": "playwright test tests/mobile-menu.spec.ts --project=mobile",
     "test:headed": "playwright test --headed --project=chromium",
     "typecheck": "tsc --noEmit",
     "report": "playwright show-report",
