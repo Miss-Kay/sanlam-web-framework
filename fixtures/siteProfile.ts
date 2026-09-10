@@ -144,15 +144,33 @@ export interface SiteProfile {
    */
   promoBar?: { container: string; close: string };
   /**
-   * Signatures of a bot-protection interstitial — the URL it redirects to,
-   * and text unique to the page. When a request is served one of these the
-   * test skips rather than false-failing.
+   * Signatures of a bot-protection response — the URL it redirects to, and
+   * text unique to the page. When a request is served one of these the test
+   * skips rather than false-failing.
    *
-   * Sanlam Online is a static export on S3 behind CloudFront with no bot
-   * manager in front of it, and a datacenter IP is served the real page — so
-   * unlike the Emirates NBD suite this is not expected to fire. It is kept
-   * because CloudFront can have a WAF attached without warning, and the cost
-   * of the check is one regex against a URL.
+   * THIS FIRES IN CI, EVERY TIME. It is not a defensive leftover.
+   *
+   * The first version of this profile claimed the opposite — "a static export
+   * on S3 behind CloudFront with no bot manager in front of it, and a
+   * datacenter IP is served the real page" — which was written from a South
+   * African address, where it is true. It is not true anywhere else.
+   * sanlamonline.co.za has a CloudFront WAF that answers
+   *
+   *     HTTP/2 403, server: CloudFront
+   *     "ERROR: The request could not be satisfied … Request blocked."
+   *
+   * to a GitHub-hosted runner (measured: 145.132.102.48, Boydton Virginia,
+   * AS8075 Microsoft — GitHub's hosted runners egress from Azure). `request
+   * blocked` in the pattern below is what catches it, and it is why every
+   * test in the suite skips on a hosted runner.
+   *
+   * Two consequences worth knowing before changing any of this:
+   *
+   *  - Skipping is the right behaviour. A WAF refusing a runner is not a
+   *    defect in the site, and without the skip the link checker would report
+   *    every internal link as broken — a spectacular false regression.
+   *  - Skipping everything is NOT an acceptable green build, so the workflow
+   *    fails the job when nothing ran. See scripts/assert-suite-ran.mjs.
    */
   botBlockUrlPattern?: RegExp;
   botBlockPattern?: RegExp;

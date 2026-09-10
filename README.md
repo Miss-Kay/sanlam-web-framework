@@ -124,6 +124,14 @@ in the code that deals with them; this is the index.
   silently, because a link that is never collected is never reported as
   broken. `LinkScanPage` opts out via `dismissesPromoBar`. See
   `pages/BasePage.ts`.
+- **The site 403s CI runners.** A CloudFront WAF answers GitHub-hosted
+  runners with `403 … Request blocked` (they egress from Azure IP space in the
+  US; measured from Boydton, Virginia) while serving a South African address
+  the real page. `isBotBlocked()` catches it on the `request blocked` string
+  and the suite skips — correct, because a WAF refusing a runner is not a
+  defect in the site, and without the skip the link checker would resolve
+  every internal link against a 403 and report the whole site as broken. See
+  "Running it in CI" below for why that still fails the job.
 - **There is no consent banner.** Checked, not assumed: the page sets
   analytics cookies and loads Segment, MoEngage, TikTok, Meta, LinkedIn and
   Crazy Egg on first paint with nothing to dismiss and no shadow root
@@ -156,6 +164,31 @@ half its navigation still passes, because everything left resolves perfectly.
 Each page has its own committed snapshot in `fixtures/*.baseline.json`. A link
 present at baseline and absent now fails the run. New links are reported, not
 failed — accept them deliberately with `npm run baseline:update`.
+
+## Running it in CI
+
+**The suite cannot currently verify anything from a GitHub-hosted runner**, and
+the pipeline says so instead of hiding it.
+
+Sanlam's WAF 403s those runners, so every test hits the bot-block skip. A skip
+is a pass as far as Playwright's exit code goes, so the run would report a
+green tick against a suite that checked nothing — which is worse than a red
+one, because a green tick gets believed and the next real regression sails
+straight through it. `scripts/assert-suite-ran.mjs` runs after the tests,
+reads `test-results/junit.xml`, and fails the job when every test skipped,
+printing the diagnosis and the options.
+
+To get real CI coverage, in order of preference:
+
+1. **A self-hosted runner with South African egress.** The suite passes from an
+   unblocked address; nothing in the code needs to change.
+2. **Point `BASE_URL` at an environment that does not block automation** — a
+   staging distribution without the WAF rule, or an allowlisted egress.
+3. **Run it locally** — `npm test` passes from an unblocked address, which is
+   how the findings in this README were produced.
+
+Do not "fix" this by deleting the bot-block patterns. That would turn a
+truthful skip into 126 fabricated broken links.
 
 ## CI and reports
 

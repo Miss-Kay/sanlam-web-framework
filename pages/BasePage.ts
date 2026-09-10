@@ -209,14 +209,21 @@ export abstract class BasePage {
   }
 
   /**
-   * True when a bot-protection interstitial was served instead of the page.
+   * True when a bot-protection response was served instead of the page.
    *
-   * Not expected here — the site is a static export on S3 behind CloudFront
-   * with no bot manager in front of it, and a datacenter IP is served the
-   * real page. Kept because a WAF can be attached to a CloudFront
-   * distribution without anyone telling the QA team, and a challenge page is
-   * not a code failure: the suite skips rather than reporting a false
-   * regression.
+   * This is the single most consequential method in the suite, because on a
+   * GitHub-hosted runner it returns TRUE for every test. Sanlam's CloudFront
+   * WAF answers those runners with a 403 "Request blocked" page; a South
+   * African address gets the real site. See SiteProfile.botBlockPattern for
+   * the measurement.
+   *
+   * Skipping is correct: a WAF refusing a runner is not a defect in the site,
+   * and without the skip the link checker would resolve every internal link
+   * against a 403 and report the entire site as broken.
+   *
+   * What is NOT correct is letting a run in which everything skipped report
+   * success, which is what Playwright's exit code does on its own. The
+   * workflow fails the job when nothing ran — scripts/assert-suite-ran.mjs.
    */
   async isBotBlocked(): Promise<boolean> {
     if (site.botBlockUrlPattern?.test(this.page.url())) return true;
