@@ -163,10 +163,21 @@ failed — accept them deliberately with `npm run baseline:update`.
 day, and on manual dispatch. Reports upload as a GitHub artifact always, and
 publish to S3 when the AWS pieces are configured.
 
-**AWS is not bootstrapped for this repo yet.** When it is:
+**AWS is bootstrapped** (2026-09-10): bucket `sanlam-suite-reports`, region
+`eu-west-1`, role `sanlam-web-framework-report-publisher`, with
+`AWS_ROLE_ARN`, `AWS_REGION` and `REPORT_BUCKET` set on the repo. Reports
+publish to
+`http://sanlam-suite-reports.s3-website.eu-west-1.amazonaws.com/reports/latest/index.html`.
+
+`eu-west-1` rather than `af-south-1` deliberately: every other repo in the
+group publishes there, including the two other South African targets. The
+reports are static HTML, so region latency is irrelevant next to having one
+place to look.
+
+To recreate it from scratch:
 
 ```bash
-./scripts/setup-aws-reports.sh sanlam-suite-reports af-south-1 Miss-Kay/sanlam-web-framework
+./scripts/setup-aws-reports.sh sanlam-suite-reports eu-west-1 Miss-Kay/sanlam-web-framework
 ```
 
 Then set `AWS_ROLE_ARN` (secret), `AWS_REGION` and `REPORT_BUCKET` (variables)
